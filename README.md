@@ -50,13 +50,31 @@ truncate -s 256M "$MMOZZER/out/SBSA_FLASH0.fd"
 truncate -s 256M "$MMOZZER/out/SBSA_FLASH1.fd"
 ```
 
+# Applications
+```
+cd "$MMOZZER/edk2" && set +u && source edksetup.sh BaseTools && cd "$WORKSPACE"
+
+build -a AARCH64 -t GCC -b DEBUG -n "$(nproc)" -p Applications/Apps.dsc
+
+mkdir -p "$MMOZZER/out/esp"
+cp "$WORKSPACE/Build/Apps/DEBUG_GCC/AARCH64/VarTest.efi" "$MMOZZER/out/esp/"
+```
+
 # Run
 ```
 qemu-system-aarch64 -M sbsa-ref -m 2048 -smp 2 \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH0.fd" \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH1.fd" \
+  -drive if=none,id=esp,format=raw,file=fat:rw:"$MMOZZER/out/esp" \
+  -device ide-hd,drive=esp,bus=ide.0 \
   -serial mon:stdio \
   -serial file:"$MMOZZER/out/uart1_secure.log" \
   -serial file:"$MMOZZER/out/uart2_stmm.log" \
   -nographic
+```
+
+# Run apps (UEFI shell)
+```
+fs0:
+VarTest.efi
 ```

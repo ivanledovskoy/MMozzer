@@ -1,0 +1,24 @@
+## @file
+#  VarTest - minimal NS-world UEFI application that exercises the variable
+#  service via gRT->SetVariable / gRT->GetVariable (which on this stand go
+#  through VariableSmmRuntimeDxe -> SMC MM_COMMUNICATE -> StandaloneMM).
+##
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = VarTest
+  FILE_GUID                      = 3F8E1C20-7A4B-4D9E-B6C1-2A5D8E0F1234
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  ENTRY_POINT                    = UefiMain
+
+[Sources]
+  VarTest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  UefiApplicationEntryPoint
+  UefiLib
+  UefiRuntimeServicesTableLib
