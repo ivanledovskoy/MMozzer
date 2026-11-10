@@ -1,0 +1,15 @@
+[submodule "edk2"]
+	path = edk2
+	url = https://github.com/ivanledovskoy/edk2.git
+	branch = mmozzer
+[submodule "edk2-platforms"]
+	path = edk2-platforms
+	url = https://github.com/ivanledovskoy/edk2-platforms.git
+	branch = mmozzer
+[submodule "trusted-firmware-a"]
+	path = trusted-firmware-a
+	url = https://github.com/ivanledovskoy/arm-trusted-firmware.git
+	branch = mmozzer
+[submodule "edk2-non-osi"]
+	path = edk2-non-osi
+	url = https://github.com/tianocore/edk2-non-osi.git
