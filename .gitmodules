@@ -13,3 +13,7 @@
 [submodule "edk2-non-osi"]
 	path = edk2-non-osi
 	url = https://github.com/tianocore/edk2-non-osi.git
+[submodule "qemu-libafl-bridge"]
+	path = qemu-libafl-bridge
+	url = https://github.com/ivanledovskoy/qemu-libafl-bridge.git
+	branch = mmozzer
