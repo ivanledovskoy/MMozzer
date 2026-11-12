@@ -60,9 +60,17 @@ mkdir -p "$MMOZZER/out/esp"
 cp "$WORKSPACE/Build/Apps/DEBUG_GCC/AARCH64/VarTest.efi" "$MMOZZER/out/esp/"
 ```
 
+# libafl-qemu
+```
+cd "$MMOZZER/qemu-libafl-bridge"
+mkdir -p build && cd build
+../configure --target-list=aarch64-softmmu --disable-docs --disable-werror
+make -j"$(nproc)"
+```
+
 # Run
 ```
-qemu-system-aarch64 -M sbsa-ref -m 2048 -smp 2 \
+"$MMOZZER/qemu-libafl-bridge/build/qemu-system-aarch64" -M sbsa-ref -m 2048 -smp 2 \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH0.fd" \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH1.fd" \
   -drive if=none,id=esp,format=raw,file=fat:rw:"$MMOZZER/out/esp" \
