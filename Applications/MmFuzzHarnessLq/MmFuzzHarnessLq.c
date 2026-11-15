@@ -7,9 +7,14 @@
 #include <Library/UefiLib.h>
 #include "LqemuBackdoor.h"
 
-// Target MMI handler: variable service gEfiSmmVariableProtocolGuid
-STATIC CONST EFI_GUID mTargetGuid = {
-  0xED32D533, 0x99E6, 0x4209, { 0x9C,0xC0,0x2D,0x72,0xCD,0xD9,0x98,0xA7 } };
+//
+// Target MMI handler GUID. Variable service (native): gEfiSmmVariableProtocolGuid
+// ED32D533-99E6-4209-9CC0-2D72CDD998A7. Use this for the open-source stand.
+//
+// Coverage-test target: BackdoorMm handler GUID (256-way switch on payload[0]).
+STATIC CONST EFI_GUID  mTargetGuid = {
+  0xA5E7B1C4, 0x9D3F, 0x4E8A, { 0xB6, 0xC2, 0x1F, 0x0D, 0x7A, 0x2E, 0x5C, 0x83 }
+};
 
 #define MM_HDR_SIZE   (OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data))
 #define FUZZ_PAYLOAD  0x1000

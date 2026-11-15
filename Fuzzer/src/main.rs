@@ -26,7 +26,7 @@ use libafl_bolts::{
     tuples::tuple_list,
 };
 use libafl_qemu::{
-    emu::Emulator, executor::QemuExecutor, modules::edges::StdEdgeCoverageModule,
+    emu::Emulator, executor::QemuExecutor, modules::edges::StdEdgeCoverageClassicModule,
     QemuSnapshotManager,
 };
 use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND};
@@ -39,7 +39,7 @@ fn main() {
     };
 
     // Hardcoded parameters
-    let timeout = Duration::from_secs(3);
+    let timeout = Duration::from_secs(30);
     let broker_port = 1340;
     let cores = Cores::from_cmdline("1").unwrap();
     let corpus_dirs = [PathBuf::from("./corpus")];
@@ -60,7 +60,7 @@ fn main() {
         };
 
         // Choose modules to use
-        let modules = tuple_list!(StdEdgeCoverageModule::builder()
+        let modules = tuple_list!(StdEdgeCoverageClassicModule::builder()
             .map_observer(edges_observer.as_mut())
             .build()?);
 

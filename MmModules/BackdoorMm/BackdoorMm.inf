@@ -1,0 +1,29 @@
+## @file
+#  BackdoorMm - StandaloneMM coverage test module. Registers an MMI handler on
+#  a dedicated backdoor GUID and branches 256 ways on CommBuffer[0], so the
+#  fuzzer can collect edge coverage from inside the Secure world.
+##
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = BackdoorMm
+  FILE_GUID                      = 3C9E5A17-8B42-4F6D-9A01-D5E8C3B2F7A4
+  MODULE_TYPE                    = MM_STANDALONE
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  VERSION_STRING                 = 0.1
+  ENTRY_POINT                    = BackdoorMmEntry
+
+[Sources]
+  BackdoorMm.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  StandaloneMmPkg/StandaloneMmPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  MmServicesTableLib
+  StandaloneMmDriverEntryPoint
+
+[Depex]
+  TRUE
