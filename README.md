@@ -107,7 +107,7 @@ VarTest.efi
 cd "$MMOZZER/Fuzzer/run" && "$MMOZZER/Fuzzer/target/release/mm_fuzz" \
   -L "$MMOZZER/Fuzzer/target/release/qemu-libafl-bridge/pc-bios" \
   -icount shift=auto,align=off,sleep=off \
-  -machine sbsa-ref -m 2048 -smp 1 -monitor null \
+  -machine sbsa-ref -m 512 -smp 1 -monitor null \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH0.fd" \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH1.fd" \
   -drive if=none,id=esp,format=raw,file=esp.img -device ide-hd,drive=esp,bus=ide.0 \

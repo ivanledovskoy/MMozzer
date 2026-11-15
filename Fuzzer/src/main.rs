@@ -27,7 +27,7 @@ use libafl_bolts::{
 };
 use libafl_qemu::{
     emu::Emulator, executor::QemuExecutor, modules::edges::StdEdgeCoverageClassicModule,
-    QemuSnapshotManager,
+    FastSnapshotManager,
 };
 use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND};
 
@@ -67,7 +67,7 @@ fn main() {
         let mut emu = Emulator::builder()
             .qemu_parameters(args)
             .modules(modules)
-            .snapshot_manager(QemuSnapshotManager::default())
+            .snapshot_manager(FastSnapshotManager::default())
             .build()?;
 
         let devices = emu.list_devices();
