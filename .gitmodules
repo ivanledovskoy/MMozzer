@@ -17,3 +17,6 @@
 	path = qemu-libafl-bridge
 	url = https://github.com/ivanledovskoy/qemu-libafl-bridge.git
 	branch = mmozzer
+[submodule "LibAFL"]
+	path = LibAFL
+	url = https://github.com/AFLplusplus/LibAFL.git
