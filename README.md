@@ -60,7 +60,7 @@ mkdir -p "$MMOZZER/out/esp"
 cp "$WORKSPACE/Build/Apps/DEBUG_GCC/AARCH64/VarTest.efi" "$MMOZZER/out/esp/"
 ```
 
-# libafl-qemu
+# libafl-qemu (now unused)
 ```
 cd "$MMOZZER/qemu-libafl-bridge"
 mkdir -p build && cd build
@@ -68,7 +68,22 @@ mkdir -p build && cd build
 make -j"$(nproc)"
 ```
 
-# Run
+# LibAFL
+```
+cd "$MMOZZER/Fuzzer"
+cargo build --release
+
+mkdir -p "$MMOZZER/Fuzzer/run" && cd "$MMOZZER/Fuzzer/run"
+printf '@echo -off\nfs0:\nMmFuzzHarnessLq.efi\n' > startup.nsh
+truncate -s 64M esp.img
+mformat -i esp.img -F ::
+mcopy -i esp.img "$MMOZZER/build/Build/Apps/DEBUG_GCC/AARCH64/MmFuzzHarnessLq.efi" ::/MmFuzzHarnessLq.efi
+mcopy -i esp.img startup.nsh ::/startup.nsh
+qemu-img create -f qcow2 dummy.qcow2 32M
+mkdir -p logs corpus crashes && head -c 64 /dev/zero > corpus/seed
+```
+
+# Run QEMU
 ```
 "$MMOZZER/qemu-libafl-bridge/build/qemu-system-aarch64" -M sbsa-ref -m 2048 -smp 2 \
   -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH0.fd" \
@@ -85,4 +100,18 @@ make -j"$(nproc)"
 ```
 fs0:
 VarTest.efi
+```
+
+# Run fuzzer
+```
+cd "$MMOZZER/Fuzzer/run" && "$MMOZZER/Fuzzer/target/release/mm_fuzz" \
+  -L "$MMOZZER/Fuzzer/target/release/qemu-libafl-bridge/pc-bios" \
+  -icount shift=auto,align=off,sleep=off \
+  -machine sbsa-ref -m 2048 -smp 1 -monitor null \
+  -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH0.fd" \
+  -drive if=pflash,format=raw,file="$MMOZZER/out/SBSA_FLASH1.fd" \
+  -drive if=none,id=esp,format=raw,file=esp.img -device ide-hd,drive=esp,bus=ide.0 \
+  -drive if=none,format=qcow2,file=dummy.qcow2 \
+  -serial file:logs/uart0_fuzz.log -serial null -serial file:logs/uart2_fuzz.log \
+  -nographic -snapshot -S
 ```
