@@ -1,3 +1,5 @@
 /build/
 /out/
 *.log
+Fuzzer/target/
+Fuzzer/run/

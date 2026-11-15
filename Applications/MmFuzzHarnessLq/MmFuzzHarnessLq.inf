@@ -1,0 +1,21 @@
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = MmFuzzHarnessLq
+  FILE_GUID      = 9C2A7E41-5B38-4D6F-A1E0-73C8B9D40A52
+  MODULE_TYPE    = UEFI_APPLICATION
+  VERSION_STRING = 0.1
+  ENTRY_POINT    = UefiMain
+[Sources]
+  MmFuzzHarnessLq.c
+  LqemuBackdoor.h
+[Packages]
+  MdePkg/MdePkg.dec
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+[Protocols]
+  gEfiMmCommunication2ProtocolGuid

@@ -32,3 +32,4 @@
 
 [Components]
   Applications/VarTest/VarTest.inf
+  Applications/MmFuzzHarnessLq/MmFuzzHarnessLq.inf

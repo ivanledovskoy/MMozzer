@@ -1,0 +1,19 @@
+[package]
+name = "mm_fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libafl         = { path = "../LibAFL/crates/libafl" }
+libafl_bolts   = { path = "../LibAFL/crates/libafl_bolts" }
+libafl_targets = { path = "../LibAFL/crates/libafl_targets" }
+libafl_qemu    = { path = "../LibAFL/crates/libafl_qemu", default-features = false, features = ["systemmode", "aarch64"] }
+env_logger = "0.11.5"
+
+[build-dependencies]
+libafl_qemu_build = { path = "../LibAFL/crates/libafl_qemu/libafl_qemu_build" }
+
+[profile.release]
+debug = true
+lto = "fat"
+codegen-units = 1
