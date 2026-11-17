@@ -1,7 +1,7 @@
 ## @file
-#  VarTest - minimal NS-world UEFI application that exercises the variable
-#  service via gRT->SetVariable / gRT->GetVariable (which on this stand go
-#  through VariableSmmRuntimeDxe -> SMC MM_COMMUNICATE -> StandaloneMM).
+#  VarTest - NS-world UEFI application that talks to the StandaloneMM variable
+#  handler via RAW MM_COMMUNICATE (EFI_MM_COMMUNICATION2_PROTOCOL), building the
+#  comm buffer by hand so the message size (MessageLength) is fully controlled.
 ##
 [Defines]
   INF_VERSION                    = 0x00010005
@@ -16,9 +16,16 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
+  BaseLib
   BaseMemoryLib
+  MemoryAllocationLib
   UefiApplicationEntryPoint
+  UefiBootServicesTableLib
   UefiLib
-  UefiRuntimeServicesTableLib
+
+[Protocols]
+  gEfiMmCommunication2ProtocolGuid
+  gEfiSmmVariableProtocolGuid
