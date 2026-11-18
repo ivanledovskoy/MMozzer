@@ -9,6 +9,14 @@ export PACKAGES_PATH=$MMOZZER/edk2:$MMOZZER/edk2-platforms:$MMOZZER/edk2-non-osi
 mkdir -p "$WORKSPACE"
 ```
 
+# Extract closed MM drivers
+```
+$MMOZZER/scripts/extract_closed_mm.sh IMAGE_FILE"
+$MMOZZER/scripts/gen_closed_mm_fdf.sh"
+
+printf '\x06\x08' > closed_mm/closed_mm_true.depex
+```
+
 # Build standalone MM
 
 ```
@@ -16,7 +24,7 @@ make -C "$MMOZZER/edk2/BaseTools" -j"$(nproc)"
 cd "$MMOZZER/edk2" && set +u && source edksetup.sh BaseTools
 
 cd "$WORKSPACE"
-build -a AARCH64 -t GCC -b DEBUG -n "$(nproc)" -p Platform/Qemu/SbsaQemu/StandaloneMm/SbsaQemuStandaloneMm.dsc
+build -a AARCH64 -t GCC -b DEBUG -n "$(nproc)" -p Platform/Qemu/SbsaQemu/StandaloneMm/SbsaQemuStandaloneMm.dsc -D CLOSED_MM=TRUE
 ```
 
 # Build TF-A

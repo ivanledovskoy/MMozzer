@@ -3,3 +3,4 @@
 *.log
 Fuzzer/target/
 Fuzzer/run/
+closed_mm/
