@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$SCRIPT_DIR")"
 
 IMG="${1:-$ROOT/socfw.cap}"
-UEFIEXTRACT="$ROOT/scripts/uefiextract"
+UEFIEXTRACT="$ROOT/uefiextract"
 OUT="$ROOT/closed_mm/modules"
 MANIFEST="$ROOT/closed_mm/modules.txt"
 
@@ -21,13 +21,15 @@ MANIFEST="$ROOT/closed_mm/modules.txt"
 # (StandaloneMmCpu = root dispatcher; embedding the vendor one would break us.)
 EXCLUDE_GUIDS="58F7A62B-6280-42A7-BC38-10535A64A92C"
 
-[ -x "$UEFIEXTRACT" ] || { echo "!! uefiextract not found at $UEFIEXTRACT" >&2; exit 1; }
-[ -f "$IMG" ]        || { echo "!! image not found: $IMG" >&2; exit 1; }
-
 DUMP="${IMG}.dump"
 if [ ! -d "$DUMP" ]; then
+  # Need to (re)generate the dump - the image and tool are required only here.
+  [ -x "$UEFIEXTRACT" ] || { echo "!! uefiextract not found at $UEFIEXTRACT" >&2; exit 1; }
+  [ -f "$IMG" ]        || { echo "!! image not found: $IMG (and no dump at $DUMP)" >&2; exit 1; }
   echo "==> UEFIExtract $IMG all"
   "$UEFIEXTRACT" "$IMG" all >/dev/null
+else
+  echo "==> reusing existing dump: $DUMP"
 fi
 
 mkdir -p "$OUT"
@@ -53,6 +55,19 @@ while IFS= read -r info; do
   cp "$pe32dir/body.bin" "$OUT/$guid.efi"
   printf '%s,%s,%s.efi\n' "$guid" "$name" "$guid" >> "$MANIFEST"
   echo "   extracted      : $name  $guid"
+
+  # Report the vendor module's ORIGINAL depex that we drop in favour of our TRUE
+  # stub (06 08). Integrate rebuilds the FFS with SECTION SMM_DEPEX = closed_mm/
+  # closed_mm_true.depex, so whatever dependency the module had is overridden.
+  dpxdir="$(find "$node" -maxdepth 1 -type d -iname '*dependency section*' | head -1)"
+  if [ -n "$dpxdir" ] && [ -f "$dpxdir/body.bin" ]; then
+    orig="$(xxd -p "$dpxdir/body.bin" | tr -d '\n' | sed 's/\(..\)/\1 /g; s/ *$//')"
+    parsed="$(sed -n '/^Parsed expression:/,$p' "$dpxdir/info.txt" | tail -n +2 \
+              | sed 's/^[[:space:]]*//' | paste -sd';' - | sed 's/;/; /g')"
+    echo "     depex deleted: [$orig]  (${parsed:-?})  ->  stub [06 08] (TRUE)"
+  else
+    echo "     depex deleted: (vendor module had no depex)  ->  stub [06 08] (TRUE)"
+  fi
   n=$((n+1))
 done < <(grep -rl 'Subtype: MM standalone module' "$DUMP" --include=info.txt | sort)
 
