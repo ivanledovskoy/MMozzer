@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$SCRIPT_DIR")"
 
 IMG="${1:-$ROOT/socfw.cap}"
-UEFIEXTRACT="$ROOT/uefiextract"
+UEFIEXTRACT="$ROOT/scripts/uefiextract"
 OUT="$ROOT/closed_mm/modules"
 MANIFEST="$ROOT/closed_mm/modules.txt"
 

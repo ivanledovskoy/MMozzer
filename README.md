@@ -11,8 +11,8 @@ mkdir -p "$WORKSPACE"
 
 # Extract closed MM drivers
 ```
-$MMOZZER/scripts/extract_closed_mm.sh IMAGE_FILE"
-$MMOZZER/scripts/gen_closed_mm_fdf.sh"
+$MMOZZER/scripts/extract_closed_mm.sh IMAGE_FILE
+$MMOZZER/scripts/gen_closed_mm_fdf.sh
 
 printf '\x06\x08' > closed_mm/closed_mm_true.depex
 ```
