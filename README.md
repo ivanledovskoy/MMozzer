@@ -115,7 +115,7 @@ VarTest.efi
 
 # Run fuzzer
 ```
-cd "$MMOZZER/Fuzzer/run" && "$MMOZZER/Fuzzer/target/release/mm_fuzz" \
+cd "$MMOZZER/Fuzzer/run" && MODLOAD_TIMEOUT=10 "$MMOZZER/Fuzzer/target/release/mm_fuzz" \
   -L "$MMOZZER/Fuzzer/target/release/qemu-libafl-bridge/pc-bios" \
   -icount shift=auto,align=off,sleep=off \
   -machine sbsa-ref -m 512 -smp 1 -monitor null \
