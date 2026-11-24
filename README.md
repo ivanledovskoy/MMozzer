@@ -24,7 +24,7 @@ make -C "$MMOZZER/edk2/BaseTools" -j"$(nproc)"
 cd "$MMOZZER/edk2" && set +u && source edksetup.sh BaseTools
 
 cd "$WORKSPACE"
-build -a AARCH64 -t GCC -b DEBUG -n "$(nproc)" -p Platform/Qemu/SbsaQemu/StandaloneMm/SbsaQemuStandaloneMm.dsc -D CLOSED_MM=TRUE
+build -a AARCH64 -t GCC -b DEBUG -n "$(nproc)" -p Platform/Qemu/SbsaQemu/StandaloneMm/SbsaQemuStandaloneMm.dsc -D CLOSED_MM=TRUE -D MM_CALIBRATE=TRUE
 ```
 
 # Build TF-A
@@ -78,6 +78,9 @@ make -j"$(nproc)"
 
 # LibAFL
 ```
+rm -rf "$MMOZZER/qemu-libafl-bridge/build"
+export LIBAFL_QEMU_DIR="$MMOZZER/qemu-libafl-bridge"
+
 cd "$MMOZZER/Fuzzer"
 cargo build --release
 
