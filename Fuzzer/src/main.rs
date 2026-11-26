@@ -44,6 +44,14 @@ fn snapshot_dev_filter() -> DeviceSnapshotFilter {
     ])
 }
 use libafl::{executors::ExitKind, inputs::HasTargetBytes};
+use libafl::{
+    corpus::Testcase,
+    feedbacks::{Feedback, StateInitializer},
+    HasMetadata,
+};
+use libafl_bolts::Named;
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND};
 
 // Calibration sync-exit command IDs emitted by the MM core dispatcher when the
@@ -51,6 +59,7 @@ use libafl_targets::{edges_map_mut_ptr, EDGES_MAP_DEFAULT_SIZE, MAX_EDGES_FOUND}
 const CMD_LOAD_PRE: u64 = 0x0A10; // x1 = &gMmCalSkip, x2 = &FileName (FFS GUID)
 const CMD_LOAD_POST: u64 = 0x0A11; // module entry returned
 const CMD_START_VIRT: u64 = 0x0; // NS-world harness handoff (x1 = payload, x2 = cap)
+const CMD_CRASH: u64 = 0x0A12; // TF-A unhandled exception: x1 = ELR (crash PC), x2 = FAR
 
 extern "C" fn on_alarm(_sig: libc::c_int) {
     // Make the in-flight qemu.run() return QemuExitReason::Timeout.
@@ -131,6 +140,58 @@ fn parse_skip_set() -> Vec<[u8; 16]> {
             }
         })
         .collect()
+}
+
+/// Crash details attached to each saved solution so crashes can be analysed
+/// offline from their `.metadata` file.
+#[derive(Debug, Serialize, Deserialize)]
+struct CrashInfoMetadata {
+    pc: String,
+    fault_addr: String,
+}
+libafl_bolts::impl_serdeany!(CrashInfoMetadata);
+
+/// Set by the harness on a CRASH; read by `CrashInfoFeedback` when the solution
+/// is saved. Single core, so a plain static is fine.
+static mut LAST_CRASH: Option<(u64, u64)> = None;
+
+/// Objective-side feedback that records the last crash's PC / fault address into
+/// the saved testcase metadata. Never "interesting" on its own.
+#[derive(Debug)]
+struct CrashInfoFeedback {
+    name: Cow<'static, str>,
+}
+impl CrashInfoFeedback {
+    fn new() -> Self {
+        Self { name: Cow::from("CrashInfo") }
+    }
+}
+impl Named for CrashInfoFeedback {
+    fn name(&self) -> &Cow<'static, str> {
+        &self.name
+    }
+}
+impl<S> StateInitializer<S> for CrashInfoFeedback {}
+impl<EM, I, OT, S> Feedback<EM, I, OT, S> for CrashInfoFeedback {
+    #[cfg(feature = "track_hit_feedbacks")]
+    fn last_result(&self) -> Result<bool, Error> {
+        Ok(false)
+    }
+    fn append_metadata(
+        &mut self,
+        _state: &mut S,
+        _manager: &mut EM,
+        _observers: &OT,
+        testcase: &mut Testcase<I>,
+    ) -> Result<(), Error> {
+        if let Some((pc, fault_addr)) = unsafe { LAST_CRASH } {
+            testcase.add_metadata(CrashInfoMetadata {
+                pc: format!("{pc:#x}"),
+                fault_addr: format!("{fault_addr:#x}"),
+            });
+        }
+        Ok(())
+    }
 }
 
 fn main() {
@@ -239,6 +300,23 @@ fn main() {
                             }
                         }
                         CMD_START_VIRT => break (a1 as GuestAddr, a2 as usize),
+                        CMD_CRASH if in_entry => {
+                            // Module faulted in its entry (caught by the SP shim).
+                            // Treat like a hang: skip it and replay, without waiting
+                            // for the timeout. a1 = ELR (crash PC), a2 = fault addr.
+                            if skip_set.iter().any(|g| g == &cur_guid) {
+                                eprintln!("MODLOAD: {} still crashes after skip - aborting", guid_str(&cur_guid));
+                                process::exit(1);
+                            }
+                            println!("MODLOAD: CRASH {} pc={a1:#x} -> skip & replay", guid_str(&cur_guid));
+                            skip_set.push(cur_guid);
+                            let r = root_snap.expect("crash before any snapshot");
+                            unsafe { qemu.restore_fast_snapshot(r) };
+                            cur_guid = root_guid;
+                            in_entry = true;
+                            let v: u64 = if skip_set.iter().any(|g| g == &root_guid) { 1 } else { 0 };
+                            let _ = qemu.write_mem(root_skip_addr, &v.to_le_bytes());
+                        }
                         other => println!("MODLOAD: ignoring sync cmd {other:#x}"),
                     }
                 }
@@ -274,12 +352,12 @@ fn main() {
         };
         set_timer(0);
         println!(
-            "MODLOAD: done - {} module(s) loaded, {} skipped (hung)",
+            "MODLOAD: done - {} module(s) loaded, {} skipped (hung/crashed)",
             reported_loaded.len(),
             skip_set.len()
         );
         if !skip_set.is_empty() {
-            print!("MODLOAD: skipped (hung):");
+            print!("MODLOAD: skipped:");
             for g in &skip_set {
                 print!(" {}", guid_str(g));
             }
@@ -308,7 +386,20 @@ fn main() {
             unsafe {
                 let _ = qemu.write_mem(payload_addr, &buf[..len]);
                 let kind = match qemu.run() {
-                    Ok(QemuExitReason::SyncExit) => ExitKind::Ok, // harness END
+                    Ok(QemuExitReason::SyncExit) => {
+                        // END from the harness, or a CRASH signalled by TF-A's
+                        // unhandled-exception hook (x0 = cmd, x1 = crash PC).
+                        if qemu.read_reg(Regs::X0).unwrap_or(0) as u64 == CMD_CRASH {
+                            let pc = qemu.read_reg(Regs::X1).unwrap_or(0) as u64;
+                            let far = qemu.read_reg(Regs::X2).unwrap_or(0) as u64;
+                            // No stdout line: the crash shows up as an objective and
+                            // its PC/fault-addr are saved in the solution's metadata.
+                            unsafe { LAST_CRASH = Some((pc, far)) };
+                            ExitKind::Crash
+                        } else {
+                            ExitKind::Ok // harness END
+                        }
+                    }
                     Ok(QemuExitReason::Timeout) => ExitKind::Timeout,
                     Ok(QemuExitReason::End(_)) => ExitKind::Crash,
                     Ok(_) => ExitKind::Ok,
@@ -333,7 +424,11 @@ fn main() {
         );
 
         // A feedback to choose if an input is a solution or not
-        let mut objective = feedback_or_fast!(CrashFeedback::new(), TimeoutFeedback::new());
+        let mut objective = feedback_or_fast!(
+            CrashFeedback::new(),
+            TimeoutFeedback::new(),
+            CrashInfoFeedback::new()
+        );
 
         // If not restarting, create a State from scratch
         let mut state = state.unwrap_or_else(|| {

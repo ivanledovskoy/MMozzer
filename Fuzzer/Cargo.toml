@@ -10,6 +10,7 @@ libafl_targets = { path = "../LibAFL/crates/libafl_targets" }
 libafl_qemu    = { path = "../LibAFL/crates/libafl_qemu", default-features = false, features = ["systemmode", "aarch64"] }
 env_logger = "0.11.5"
 libc = "0.2.159"
+serde = { version = "1", features = ["derive"] }
 
 [build-dependencies]
 libafl_qemu_build = { path = "../LibAFL/crates/libafl_qemu/libafl_qemu_build" }

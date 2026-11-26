@@ -54,6 +54,8 @@ BackdoorHandler (
 
   b = ((UINT8 *)CommBuffer)[0];
 
+  UINT32* dead_ptr = (UINT32*)0xdeadbeef;
+
   switch (b) {
     case 0x00: mBackdoorSink = 0xB000u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x00\n")); break;
     case 0x01: mBackdoorSink = 0xB001u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x01\n")); break;
@@ -63,7 +65,7 @@ BackdoorHandler (
     case 0x05: mBackdoorSink = 0xB005u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x05\n")); break;
     case 0x06: mBackdoorSink = 0xB006u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x06\n")); break;
     case 0x07: mBackdoorSink = 0xB007u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x07\n")); break;
-    case 0x08: mBackdoorSink = 0xB008u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x08\n")); break;
+    case 0x08: mBackdoorSink = 0xB008u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x08\n")); *dead_ptr = 0x10; break;
     case 0x09: mBackdoorSink = 0xB009u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x09\n")); break;
     case 0x0A: mBackdoorSink = 0xB00Au; DEBUG ((DEBUG_INFO, "BKDR: branch 0x0A\n")); break;
     case 0x0B: mBackdoorSink = 0xB00Bu; DEBUG ((DEBUG_INFO, "BKDR: branch 0x0B\n")); break;
