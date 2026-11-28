@@ -66,7 +66,20 @@ BackdoorHandler (
     case 0x06: mBackdoorSink = 0xB006u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x06\n")); break;
     case 0x07: mBackdoorSink = 0xB007u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x07\n")); break;
     case 0x08: mBackdoorSink = 0xB008u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x08\n")); *dead_ptr = 0x10; break;
-    case 0x09: mBackdoorSink = 0xB009u; DEBUG ((DEBUG_INFO, "BKDR: branch 0x09\n")); break;
+    case 0x09: {
+      // HeapGuard test: allocate a buffer and read ONE byte past its end.
+      // The dynamic guard puts a no-access page flush at the 0x40-byte buffer,
+      // so p[0x40] (exactly 1 byte past) faults -> OOB-read crash.
+      VOID        *p  = NULL;
+      EFI_STATUS  st  = gMmst->MmAllocatePool (EfiRuntimeServicesData, 0x40, &p);
+      if (!EFI_ERROR (st) && (p != NULL)) {
+        volatile UINT8  oob = ((volatile UINT8 *)p)[0x40];  // 1 byte OOB -> guard
+        mBackdoorSink = 0xB009u | oob;
+        gMmst->MmFreePool (p);
+      }
+      DEBUG ((DEBUG_INFO, "BKDR: branch 0x09 heap OOB test\n"));
+      break;
+    }
     case 0x0A: mBackdoorSink = 0xB00Au; DEBUG ((DEBUG_INFO, "BKDR: branch 0x0A\n")); break;
     case 0x0B: mBackdoorSink = 0xB00Bu; DEBUG ((DEBUG_INFO, "BKDR: branch 0x0B\n")); break;
     case 0x0C: mBackdoorSink = 0xB00Cu; DEBUG ((DEBUG_INFO, "BKDR: branch 0x0C\n")); break;
